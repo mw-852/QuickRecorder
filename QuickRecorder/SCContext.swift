@@ -431,7 +431,9 @@ class SCContext {
                         let exportMP3 = document.info.exportMP3
                         let format = exportMP3 ? "mp3" : document.info.format
                         let saveURL = fileURL.deletingPathExtension().appendingPathExtension(format)
-                        audioPlayerManager.saveFile(saveURL, saveAsMP3: exportMP3)
+                        audioPlayerManager.saveFile(saveURL, saveAsMP3: exportMP3) {
+                            try? fd.removeItem(at: fileURL)
+                        }
                     }
                 } else {
                     if !ud.bool(forKey: "showPreview") {

@@ -106,7 +106,8 @@ struct RecorderView: View {
     @AppStorage("preventSleep")     private var preventSleep: Bool = true
     @AppStorage("showPreview")      private var showPreview: Bool = true
     @AppStorage("hideCCenter")      private var hideCCenter: Bool = false
-    
+    @AppStorage("hideStatusBar")    private var hideStatusBar: Bool = false
+
     @State private var userColor: Color = Color.black
 
     var body: some View {
@@ -129,6 +130,8 @@ struct RecorderView: View {
             }
             SGroupBox {
                 SToggle("Mini size Menu Bar controller", isOn: $miniStatusBar)
+                SDivider()
+                SToggle("Hide recording indicator in Menu Bar", isOn: $hideStatusBar, tips: "When enabled, the status bar recording controls are hidden. Click the dock icon or use a hotkey to stop recording.")
                 SDivider()
                 SToggle("Prevent Mac from sleeping while recording", isOn: $preventSleep)
                 SDivider()

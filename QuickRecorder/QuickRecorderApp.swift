@@ -146,6 +146,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
     @AppStorage("audioQuality")     var audioQuality: AudioQuality = .high
     @AppStorage("pixelFormat")      var pixelFormat: PixFormat = .delault
     @AppStorage("hideCCenter")      var hideCCenter: Bool = false
+    @AppStorage("hideStatusBar")    var hideStatusBar: Bool = false
     
     func mousePointerReLocation(event: NSEvent) {
         if event.type == .scrollWheel { return }
@@ -240,6 +241,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
                 "recordHDR": false,
                 "preventSleep": true,
                 "showPreview": isMacOS12 ? false : true,
+                "hideStatusBar": false,
                 "savedArea": [String: [String: CGFloat]]()
             ]
         )
@@ -381,6 +383,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
                 if #unavailable(macOS 13) { NSApp.activate(ignoringOtherApps: true) }
                 PopoverState.shared.isShowing = false
             }
+        } else if hideStatusBar {
+            guard let screen = SCContext.getScreenWithMouse() else { return false }
+            let width = getStatusBarWidth()
+            let wX = (screen.frame.width - width) / 2 + screen.frame.minX
+            let wY = screen.visibleFrame.maxY
+            let contentView = NSHostingView(rootView: StatusBarItem())
+            contentView.frame = NSRect(x: wX, y: wY, width: width, height: 24)
+            controlPanel.setFrame(contentView.frame, display: true)
+            controlPanel.contentView = contentView
+            controlPanel.makeKeyAndOrderFront(nil)
         }
         return false
     }

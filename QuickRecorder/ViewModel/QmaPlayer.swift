@@ -558,33 +558,33 @@ class AudioPlayerManager: ObservableObject {
         }
     }
     
-    func saveFile(_ url: URL, saveAsMP3: Bool = false) {
+    func saveFile(_ url: URL, saveAsMP3: Bool = false, completion: (() -> Void)? = nil) {
         var url = url
         if url.pathExtension == "mp3" { url = url.deletingPathExtension() }
         if url.pathExtension != self.fileFormat { url = url.appendingPathExtension(self.fileFormat) }
         let lastComp = url.lastPathComponent
         if self.exportMP3 { url = url.deletingLastPathComponent().appendingPathComponent("." + url.lastPathComponent) }
-        
+
         Thread.detachNewThread {
             DispatchQueue.main.async { self.exporting = true }
             do {
                 guard let audioFile1 = self.audioFile1, let audioFile2 = self.audioFile2 else { return }
                 self.playerNode1.scheduleFile(audioFile1, at: nil, completionHandler: nil)
                 self.playerNode2.scheduleFile(audioFile2, at: nil, completionHandler: nil)
-                
+
                 let audioSettings = SCContext.updateAudioSettings(format: self.fileEncoder)
                 let outputFormat = self.playerNode1.outputFormat(forBus: 0)
                 let outputFile = try AVAudioFile(forWriting: url, settings: audioSettings, commonFormat: .pcmFormatFloat32, interleaved: false)
                 self.engine.stop()
                 try self.engine.enableManualRenderingMode(.offline, format: outputFormat, maximumFrameCount: 4096)
                 try self.engine.start()
-                
+
                 self.playerNode1.play()
                 self.playerNode2.play()
-                
+
                 let duration = audioFile1.length
                 let buffer = AVAudioPCMBuffer(pcmFormat: self.engine.manualRenderingFormat, frameCapacity: self.engine.manualRenderingMaximumFrameCount)!
-                
+
                 while self.engine.manualRenderingSampleTime < duration {
                     let framesToRender = min(UInt32(buffer.frameCapacity), UInt32(duration - self.engine.manualRenderingSampleTime))
                     let status = try self.engine.renderOffline(framesToRender, to: buffer)
@@ -599,15 +599,15 @@ class AudioPlayerManager: ObservableObject {
                         break
                     }
                 }
-                
+
                 self.engine.disableManualRenderingMode()
                 self.engine.stop()
                 self.setupAudioEngine()
-                
+
                 let title = "Recording Completed".local
                 var body = String(format: "File saved to: %@".local, url.path.removingPercentEncoding!)
                 let id = "quickrecorder.completed.\(UUID().uuidString)"
-                
+
                 if saveAsMP3 {
                     let oldURL = url
                     let newURl = url.deletingLastPathComponent().appendingPathComponent(lastComp).deletingPathExtension().appendingPathExtension("mp3")
@@ -624,8 +624,9 @@ class AudioPlayerManager: ObservableObject {
                         }
                     }
                 }
-                
+
                 SCContext.showNotification(title: title, body: body, id: id)
+                completion?()
             } catch {
                 SCContext.showNotification(title: "Failed to save file".local, body: "\(error.localizedDescription)", id: "quickrecorder.error.\(UUID().uuidString)")
             }
